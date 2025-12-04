@@ -59,24 +59,27 @@ Kami tidak hanya menggunakan list biasa. Demi performa maksimal, kami menerapkan
 Ikuti langkah-langkah berikut untuk menjalankan aplikasi di komputer Anda:
 
 ### 1. Clone Repository
-
-``'bash
-
+```bash
 git clone [https://github.com/mokhammadbahauddin/Oceanova.git](https://github.com/mokhammadbahauddin/Oceanova.git)
+
 cd Oceanova
-'''
+
+```
 
 ### 2. Install Dependensi (Library)
 Pastikan Python sudah terinstal, lalu jalankan perintah ini di terminal:
 
 
-
+```bash
 pip install customtkinter pygame mutagen Pillow syncedlyrics
-3. Jalankan Aplikasi
-Bash
+```
+### 3. Jalankan Aplikasi
+```Bash
 
 python gui.py
-📖 Panduan Penggunaan
+```
+##📖 Panduan Penggunaan
+```bash
 Masuk sebagai Admin
 Klik tombol 🛡️ Admin Panel di sidebar kiri bawah.
 
@@ -94,8 +97,6 @@ Ketik nama playlist baru di kolom input, lalu klik Create.
 Klik tombol View Songs pada playlist yang dibuat.
 
 Klik + Tambah Lagu dari Library untuk memasukkan lagu.
-
-📸 Screenshots
-(Tempatkan screenshot aplikasi Anda di folder repository dan tautkan di sini untuk dokumentasi yang lebih baik)
+```
 
 Copyright © 2024 Kelompok Oceanova. All Rights Reserved.
