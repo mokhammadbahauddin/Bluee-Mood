@@ -6,12 +6,12 @@
 ![GUI](https://img.shields.io/badge/GUI-CustomTkinter-blueviolet)
 ![Status](https://img.shields.io/badge/Status-Completed-success)
 
-![Tampilan Dashboard](lagu dan album /preview.png)
+![Tampilan Dashboard](lagu dan album/preview.png)
 
 **Oceanova** adalah aplikasi pemutar musik desktop modern yang dibangun menggunakan Python. Proyek ini dirancang sebagai implementasi nyata dari konsep **Struktur Data & Algoritma** dalam pengembangan perangkat lunak, menggabungkan efisiensi backend dengan antarmuka pengguna (UI/UX) yang elegan.
 
 ---
-![Tampilan Dashboard](lagu dan album /preview2.png)
+![Tampilan Dashboard](lagu dan album/preview2.png)
 ## 👥 Anggota Kelompok
 
 | NIM | Nama Anggota | Peran |
