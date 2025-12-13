@@ -12,7 +12,7 @@
 
 
 
-**Oceanova** adalah aplikasi pemutar musik desktop modern yang dibangun menggunakan Python. Proyek ini dirancang sebagai implementasi nyata dari konsep **Struktur Data & Algoritma** dalam pengembangan perangkat lunak, menggabungkan efisiensi backend dengan antarmuka pengguna (UI/UX) yang elegan.
+**Bluee Mood** adalah aplikasi pemutar musik desktop modern yang dibangun menggunakan Python. Proyek ini dirancang sebagai implementasi nyata dari konsep **Struktur Data & Algoritma** dalam pengembangan perangkat lunak, menggabungkan efisiensi backend dengan antarmuka pengguna (UI/UX) yang elegan.
 
 
 
@@ -67,9 +67,9 @@ Ikuti langkah-langkah berikut untuk menjalankan aplikasi di komputer Anda:
 
 ### 1. Clone Repository
 ```bash
-git clone [https://github.com/mokhammadbahauddin/Oceanova.git](https://github.com/mokhammadbahauddin/Oceanova.git)
+git clone [https://github.com/mokhammadbahauddin/Oceanova.git](https://github.com/mokhammadbahauddin/Bluee-Mood.git)
 
-cd Oceanova
+cd Blue-Mood
 
 ```
 
@@ -106,4 +106,4 @@ Klik tombol View Songs pada playlist yang dibuat.
 Klik + Tambah Lagu dari Library untuk memasukkan lagu.
 ```
 
-Copyright © 2024 Kelompok Oceanova. All Rights Reserved.
+Copyright © 2025 Kelompok 8. All Rights Reserved.
