@@ -28,7 +28,9 @@
 ---
 
 ## ✨ Fitur Unggulan
+
 <img src="lagu dan album/preview2.png" alt="Dashboard Oceanova" width="600">
+
 ### 1. Keamanan & Peran Pengguna (User vs Admin)
 Aplikasi memisahkan hak akses antara Pengguna biasa dan Admin.
 * **User:** Hanya bisa memutar lagu, membuat playlist, dan mencari lagu.
