@@ -14,6 +14,8 @@
 
 **Bluee Mood** adalah aplikasi pemutar musik desktop modern yang dibangun menggunakan Python. Proyek ini dirancang sebagai implementasi nyata dari konsep **Struktur Data & Algoritma** dalam pengembangan perangkat lunak, menggabungkan efisiensi backend dengan antarmuka pengguna (UI/UX) yang elegan.
 
+**LInk Download**
+[![Download](https://img.shields.io/badge/Download-Google_Drive-green?style=for-the-badge&logo=google-drive)](https://drive.google.com/file/d/1DvOIVcSbCp4Wg8C-ehsj2m3gGqbHTyyz/view?usp=drive_link)
 
 
 ---
