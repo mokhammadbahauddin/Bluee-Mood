@@ -85,7 +85,9 @@ pip install customtkinter pygame mutagen Pillow syncedlyrics
 
 python gui.py
 ```
-##📖 Panduan Penggunaan
+
+## 📖 Panduan Penggunaan
+
 ```bash
 Masuk sebagai Admin
 Klik tombol 🛡️ Admin Panel di sidebar kiri bawah.
