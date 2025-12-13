@@ -1,10 +1,29 @@
-# Simpan file ini sebagai gui.py
+
+import warnings
+warnings.filterwarnings("ignore", category=DeprecationWarning, module="pkg_resources")
+warnings.filterwarnings("ignore", category=UserWarning, module="pygame.pkgdata")
 
 import customtkinter as ctk
 from collections import deque
 import os
 import pygame
 from PIL import Image
+
+import sys
+import os
+
+# --- Tambahkan Fungsi Ini ---
+def resource_path(relative_path):
+    """ Dapatkan path absolut ke resource, bekerja untuk dev dan untuk PyInstaller """
+    try:
+        # PyInstaller membuat folder temp dan menyimpannya di _MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+
+    return os.path.join(base_path, relative_path)
+# -----------------------------
+
 try:
     from visualizer import VisualizerEngine
     from ui_components import AudioVisualizer, FullscreenVisualizer
@@ -74,10 +93,10 @@ class App(ctk.CTk):
         else:
             self.visualizer_engine = None
 
-        self.title("Oceanova")
+        self.title("Bluee Mood")
         self.geometry("1400x900")
         try:
-            self.iconbitmap("logo.ico")  # Ganti "logo.ico" dengan nama file Anda
+            self.iconbitmap(resource_path("logo.ico"))  # Ganti "logo.ico" dengan nama file Anda
         except Exception as e:
             print(f"Peringatan: File logo 'logo.ico' tidak ditemukan atau rusak. Menggunakan ikon default. Error: {e}")
             pass  # Lanjutkan tanpa crash
@@ -129,7 +148,7 @@ class App(ctk.CTk):
         self.sidebar_frame.grid(row=0, column=0, rowspan=3, sticky="nsw")
         self.sidebar_frame.grid_rowconfigure(9, weight=1)
 
-        self.logo_label = ctk.CTkLabel(self.sidebar_frame, text="Oceanova",
+        self.logo_label = ctk.CTkLabel(self.sidebar_frame, text="Blue Mood",
                                        font=ctk.CTkFont(size=20, weight="bold"),
                                        text_color=self.COLOR_PALETTE["text_primary"])
         self.logo_label.grid(row=0, column=0, padx=20, pady=20)
@@ -733,53 +752,139 @@ class App(ctk.CTk):
         self.admin_button.configure(fg_color=inactive_color, text_color=inactive_text)
 
     def show_dashboard(self):
+        """Replace your existing show_dashboard method with this"""
         self._reset_sidebar_buttons()
         self.dashboard_button.configure(fg_color=self.COLOR_PALETTE["accent_blue"],
-                                        text_color="#FFFFFF")  # Atur ke Aktif
+                                        text_color="#FFFFFF")
 
         self.clear_content_frame()
         self.main_title_label.configure(text="Dashboard")
 
-
-        banner = ctk.CTkFrame(self.content_frame, height=150, fg_color='white')
-        banner.pack(fill="x", padx=10, pady=10)
+        banner = ctk.CTkFrame(self.content_frame, height=220, corner_radius=20, fg_color='white')
+        banner.pack(fill="x", padx=20, pady=20)
 
         try:
-            banner_image = ctk.CTkImage(Image.open("upgrade_banner.png"), size=(1500, 350))
-            banner_label = ctk.CTkLabel(banner, text="", image=banner_image)
-            banner_label.pack(fill="both", expand=True)
+            # Try multiple paths to find the banner image
+            banner_paths = [
+                "upgrade_banner.png",
+                os.path.join(os.path.dirname(__file__), "upgrade_banner.png"),
+                resource_path("upgrade_banner.png")
+            ]
+
+            banner_loaded = False
+            for path in banner_paths:
+                if os.path.exists(path):
+                    banner_image = ctk.CTkImage(Image.open(path), size=(1500, 350))
+                    banner_label = ctk.CTkLabel(banner, text="", image=banner_image)
+                    banner_label.image = banner_image  # Keep reference
+                    banner_label.pack(fill="both", expand=True)
+                    banner_loaded = True
+                    break
+
+            if not banner_loaded:
+                raise FileNotFoundError("Banner image not found")
+
         except Exception as e:
-            print(f"Peringatan: Gagal memuat upgrade_banner.png: {e}. Menampilkan teks fallback.")
-            banner_label = ctk.CTkLabel(banner, text="Upgrade to Premium!", font=ctk.CTkFont(size=20))
+            print(f"Warning: Failed to load upgrade_banner.png: {e}. Showing fallback.")
+            # Fallback banner with gradient effect
+            banner_label = ctk.CTkLabel(
+                banner,
+                text="OCEANOVA\nDIVE INTO THE MUSIC",
+                font=ctk.CTkFont(size=32, weight="bold"),
+                text_color="white"
+            )
             banner_label.place(relx=0.5, rely=0.5, anchor="center")
 
-        ctk.CTkLabel(self.content_frame, text="Discover Songs", font=ctk.CTkFont(size=18, weight="bold")).pack(
-            anchor="w", padx=10, pady=(10, 0))
+        ctk.CTkLabel(
+            self.content_frame,
+            text="Discover Songs",
+            font=ctk.CTkFont(size=20, weight="bold"),
+            text_color=self.COLOR_PALETTE["text_primary"]
+        ).pack(anchor="w", padx=20, pady=(20, 10))
 
-        genre_frame = ctk.CTkScrollableFrame(self.content_frame, orientation="horizontal", height=50,
-                                             fg_color="transparent")
-        genre_frame._scrollbar.configure(height=0)
-        genre_frame.pack(fill="x", padx=10, pady=5)
+        # Container for centered genre buttons
+        genre_container = ctk.CTkFrame(self.content_frame, fg_color="transparent")
+        genre_container.pack(fill="x", padx=20, pady=10)
+
+        genre_frame = ctk.CTkFrame(genre_container, fg_color="transparent")
+        genre_frame.pack(anchor="center")
 
         genres = ["All", "Pop", "R&B", "Rock", "K-Pop", "Jazz", "Blues", "Ambient", "Indie"]
         self.genre_buttons = {}
+
         for genre in genres:
-            btn = ctk.CTkButton(genre_frame, text=genre, font=ctk.CTkFont(size=14, weight="bold"), fg_color=self.COLOR_PALETTE["card_bg"], height=40,
-                                hover_color=self.COLOR_PALETTE["card_hover"],
-                                command=lambda g=genre: self.on_genre_filter(g))
-            btn.pack(side="left", padx=5, anchor="w")
+            btn = ctk.CTkButton(
+                genre_frame,
+                text=genre,
+                font=ctk.CTkFont(size=14, weight="bold"),
+                fg_color="transparent",
+                border_width=2,
+                border_color=self.COLOR_PALETTE["card_hover"],
+                text_color=self.COLOR_PALETTE["text_secondary"],
+                height=40,
+                corner_radius=20,  # Pill shape
+                hover_color=self.COLOR_PALETTE["card_hover"],
+                command=lambda g=genre: self.on_genre_filter(g)
+            )
+            btn.pack(side="left", padx=5)
             self.genre_buttons[genre] = btn
 
-        self.card_scroll_frame = ctk.CTkScrollableFrame(self.content_frame, orientation="horizontal", height=250,
-                                                        fg_color="transparent")
-        self.card_scroll_frame._scrollbar.configure(
-            height=15,  # Dibuat terlihat (ubah ke 0 jika ingin tetap tersembunyi)
-            fg_color="transparent",  # Warna track
-            button_color=self.COLOR_PALETTE["card_hover"],  # Warna scrollbar
-            button_hover_color=self.COLOR_PALETTE["accent_pink"]  # Warna saat di-hover
+        songs_container = ctk.CTkScrollableFrame(
+            self.content_frame,
+            fg_color="transparent",
+            height=900
         )
-        self.card_scroll_frame.pack(fill="x", expand=True, padx=10, pady=10)
+        songs_container.pack(fill="both", expand=True, padx=20, pady=10)
+
+        # Store reference for filtering
+        self.songs_container = songs_container
+
+        # Display songs
         self.on_genre_filter(self.current_genre_filter)
+
+    # ============================================================================
+    # CHANGE 2: Update the on_genre_filter method to handle grid layout
+    # ============================================================================
+
+    def on_genre_filter(self, genre):
+        """Replace your existing on_genre_filter method with this"""
+        self.current_genre_filter = genre
+
+        for g, btn in self.genre_buttons.items():
+            if g == genre:
+                btn.configure(
+                    fg_color=self.COLOR_PALETTE["accent_blue"],
+                    text_color="#FFFFFF",
+                    border_width=0
+                )
+            else:
+                btn.configure(
+                    fg_color="transparent",
+                    text_color=self.COLOR_PALETTE["text_secondary"],
+                    border_width=2,
+                    border_color=self.COLOR_PALETTE["card_hover"]
+                )
+
+        # Clear existing cards
+        for widget in self.songs_container.winfo_children():
+            widget.destroy()
+
+        # Filter songs
+        all_songs = list(self.player.song_library.values())
+        if genre != "All":
+            filtered_songs = [s for s in all_songs if s.genre and s.genre.lower() == genre.lower()]
+        else:
+            filtered_songs = all_songs
+
+        if not filtered_songs:
+            ctk.CTkLabel(
+                self.songs_container,
+                text=f"No songs found for genre: {genre}",
+                text_color=self.COLOR_PALETTE["text_secondary"]
+            ).pack(pady=20)
+            return
+
+        self.display_song_grid(self.songs_container, filtered_songs)
 
     def show_library(self):
         self._reset_sidebar_buttons()
@@ -1244,61 +1349,84 @@ class App(ctk.CTk):
             remove_btn.grid(row=0, column=3, padx=(0, 10))
 
     def create_song_card(self, parent_frame, song):
-        # 1. Atur ukuran kartu agar lebih tinggi (sesuai logika proyek lama)
-        card_width = 170
-        card_height = 250  # 150 untuk gambar + 80 untuk teks/padding
+        """Replace your existing create_song_card method with this"""
+        card_width = 200
+        card_height = 280
 
-        card = ctk.CTkFrame(parent_frame, width=card_width, height=card_height, corner_radius=20,
-                            fg_color=self.COLOR_PALETTE["card_bg"])
+        card = ctk.CTkFrame(
+            parent_frame,
+            width=card_width,
+            height=card_height,
+            corner_radius=8,
+            fg_color=self.COLOR_PALETTE["card_bg"]
+        )
         card.pack(side="left", padx=10, pady=10)
-
-        # 2. Nonaktifkan propagasi (sesuai logika proyek lama)
         card.pack_propagate(False)
 
-        # 3. Tombol Gambar (dulu img_label)
-        img_size = (150, 130)  # Ukuran gambar tetap
+        # Album artwork button
+        img_size = (180, 180)
         img = self.load_image_safe(song.image_path, img_size, is_placeholder=True)
 
-        img_button = ctk.CTkButton(card, text="", image=img, fg_color="transparent",
-                                   width=img_size[0], height=img_size[1],
-                                   corner_radius=15,
-                                   hover_color=self.COLOR_PALETTE["card_hover"],
-                                   command=lambda s=song: self.on_play_song(s, context_playlist=None))
-        # 4. Gunakan .pack(side="top") (sesuai logika proyek lama)
-        img_button.pack(side="top", padx=10, pady=(10, 0))  # Beri jarak 10px dari tepi
+        img_button = ctk.CTkButton(
+            card,
+            text="",
+            image=img,
+            fg_color="transparent",
+            width=img_size[0],
+            height=img_size[1],
+            corner_radius=10,
+            hover_color=self.COLOR_PALETTE["card_hover"],
+            command=lambda s=song: self.on_play_song(s, context_playlist=None)
+        )
+        img_button.pack(side="top", padx=10, pady=(10, 5))
 
-        # 5. Frame Info (dulu info_frame)
+        # Info frame for text and like button
         info_frame = ctk.CTkFrame(card, fg_color="transparent")
-        # 6. Gunakan .pack(side="top") lagi (sesuai logika proyek lama)
-        info_frame.pack(side="top", fill="x", expand=True, padx=10, pady=(5, 10))
-
+        info_frame.pack(side="top", fill="x", expand=True, padx=10, pady=(0, 10))
         info_frame.grid_columnconfigure(0, weight=1)
         info_frame.grid_columnconfigure(1, weight=0)
-        info_frame.grid_rowconfigure(0, weight=1)
 
-        # Frame untuk Teks
+        # Text container
         text_frame = ctk.CTkFrame(info_frame, fg_color="transparent")
         text_frame.grid(row=0, column=0, sticky="w")
 
-        title = ctk.CTkLabel(text_frame, text=song.title, font=ctk.CTkFont(weight="bold"),
-                             text_color=self.COLOR_PALETTE["text_primary"])
+        # Song title
+        title_text = song.title if len(song.title) <= 20 else song.title[:20] + "..."
+        title = ctk.CTkLabel(
+            text_frame,
+            text=title_text,
+            font=ctk.CTkFont(size=14, weight="bold"),
+            text_color=self.COLOR_PALETTE["text_primary"]
+        )
         title.pack(anchor="w")
 
-        artist = ctk.CTkLabel(text_frame, text=song.artist, text_color=self.COLOR_PALETTE["text_secondary"],
-                              font=ctk.CTkFont(size=12))
+        # Artist name
+        artist_text = song.artist if len(song.artist) <= 20 else song.artist[:20] + "..."
+        artist = ctk.CTkLabel(
+            text_frame,
+            text=artist_text,
+            text_color=self.COLOR_PALETTE["text_secondary"],
+            font=ctk.CTkFont(size=12)
+        )
         artist.pack(anchor="w")
 
-        # Tombol 'Like'
+        # Like button
         is_favourite = song in self.player.favourite_playlist.view_songs()
         like_text = "❤" if is_favourite else "♡"
-        like_color = self.COLOR_PALETTE["accent_pink"] if is_favourite else self.COLOR_PALETTE["text_secondary"]
+        like_color = self.COLOR_PALETTE["accent_blue"] if is_favourite else self.COLOR_PALETTE["text_secondary"]
 
-        like_btn = ctk.CTkButton(info_frame, text=like_text, width=30, height=30,
-                                 fg_color="transparent",
-                                 text_color=like_color,
-                                 hover=False,
-                                 command=lambda s=song: self.on_toggle_favourite(s))
-        like_btn.grid(row=0, column=1, sticky="e")
+        like_btn = ctk.CTkButton(
+            info_frame,
+            text=like_text,
+            width=30,
+            height=30,
+            fg_color="transparent",
+            text_color=like_color,
+            hover=False,
+            font=ctk.CTkFont(size=16),
+            command=lambda s=song: self.on_toggle_favourite(s)
+        )
+        like_btn.grid(row=0, column=1, sticky="e", padx=(5, 0))
 
     # --- FUNGSI KONTROL (PENGHUBUNG GUI KE BACKEND) ---
 
@@ -1654,20 +1782,62 @@ class App(ctk.CTk):
         self.add_to_playlist_window.destroy()
 
     def on_genre_filter(self, genre):
+        """Replace your existing on_genre_filter method with this"""
         self.current_genre_filter = genre
+
         for g, btn in self.genre_buttons.items():
             if g == genre:
-                btn.configure(fg_color=self.COLOR_PALETTE["accent_blue"])
+                btn.configure(
+                    fg_color=self.COLOR_PALETTE["accent_blue"],
+                    text_color="#FFFFFF",
+                    border_width=0
+                )
             else:
-                btn.configure(fg_color=self.COLOR_PALETTE["card_bg"])
-        for widget in self.card_scroll_frame.winfo_children():
+                btn.configure(
+                    fg_color="transparent",
+                    text_color=self.COLOR_PALETTE["text_secondary"],
+                    border_width=2,
+                    border_color=self.COLOR_PALETTE["card_hover"]
+                )
+
+        # Clear existing cards
+        for widget in self.songs_container.winfo_children():
             widget.destroy()
-        songs = self.player.get_songs_by_genre(genre)
-        if not songs:
-            ctk.CTkLabel(self.card_scroll_frame, text=f"Tidak ada lagu genre {genre}.").pack(side="left", padx=20)
+
+        # Filter songs
+        all_songs = list(self.player.song_library.values())
+        if genre != "All":
+            filtered_songs = [s for s in all_songs if s.genre and s.genre.lower() == genre.lower()]
+        else:
+            filtered_songs = all_songs
+
+        if not filtered_songs:
+            ctk.CTkLabel(
+                self.songs_container,
+                text=f"No songs found for genre: {genre}",
+                text_color=self.COLOR_PALETTE["text_secondary"]
+            ).pack(pady=20)
             return
-        for song in songs:
-            self.create_song_card(self.card_scroll_frame, song)
+
+        self.display_song_grid(self.songs_container, filtered_songs)
+
+    def display_song_grid(self, parent, songs):
+        """New method to display songs in a grid layout"""
+        cards_per_row = 6
+        row_frame = None
+
+        for idx, song in enumerate(songs):
+            if idx % cards_per_row == 0:
+                row_frame = ctk.CTkFrame(parent, fg_color="transparent")
+                row_frame.pack(fill="x", pady=10, anchor="w")
+
+            self.create_song_card(row_frame, song)
+
+    # ============================================================================
+    # CHANGE 3: Update the create_song_card method
+    # ============================================================================
+
+
 
     def on_search(self):
         self.clear_content_frame()
