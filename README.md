@@ -1,6 +1,4 @@
-Silakan Copy seluruh blok kode di bawah ini dan Paste ke dalam file README.md Anda.
 
-Markdown
 
 # 🎧 Oceanova: Modern Desktop Music Player
 
