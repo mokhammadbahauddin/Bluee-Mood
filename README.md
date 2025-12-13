@@ -8,10 +8,13 @@
 
 <img src="lagu dan album/preview.png" alt="Dashboard Oceanova" width="600">
 
-**Oceanova** adalah aplikasi pemutar musik desktop modern yang dibangun menggunakan Python. Proyek ini dirancang sebagai implementasi nyata dari konsep **Struktur Data & Algoritma** dalam pengembangan perangkat lunak, menggabungkan efisiensi backend dengan antarmuka pengguna (UI/UX) yang elegan.
 
 
 <img src="lagu dan album/preview2.png" alt="Dashboard Oceanova" width="600">
+
+**Oceanova** adalah aplikasi pemutar musik desktop modern yang dibangun menggunakan Python. Proyek ini dirancang sebagai implementasi nyata dari konsep **Struktur Data & Algoritma** dalam pengembangan perangkat lunak, menggabungkan efisiensi backend dengan antarmuka pengguna (UI/UX) yang elegan.
+
+
 
 ---
 ## 👥 Anggota Kelompok
