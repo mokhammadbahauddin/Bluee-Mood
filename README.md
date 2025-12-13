@@ -1,6 +1,6 @@
 
 
-# 🎧 Oceanova: Modern Desktop Music Player
+# 🎧 Bluee Mood: Modern Desktop Music Player
 
 ![Python](https://img.shields.io/badge/Python-3.8%2B-blue)
 ![GUI](https://img.shields.io/badge/GUI-CustomTkinter-blueviolet)
