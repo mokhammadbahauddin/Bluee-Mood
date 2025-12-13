@@ -16,9 +16,9 @@ Markdown
 
 | NIM | Nama Anggota | Peran |
 | :--- | :--- | :--- |
-| **[Isi NIM Disini]** | **[Nama Anggota 1]** | Lead Developer (Backend & Data Structures) |
-| **[Isi NIM Disini]** | **[Nama Anggota 2]** | UI/UX Designer & Frontend (CustomTkinter) |
-| **[Isi NIM Disini]** | **[Nama Anggota 3]** | Quality Assurance & Documentation |
+| **103102400080** | **Mokhammad Bahauddin** | Lead Developer (Backend & Data Structures) |
+| **103102400050** | **Novena Aurelia Luisma ** | UI/UX Designer & Frontend (CustomTkinter) |
+| **103102400011** | **Gracella Mangalik** | Quality Assurance & Documentation |
 
 ---
 
