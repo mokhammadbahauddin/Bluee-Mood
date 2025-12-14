@@ -425,11 +425,17 @@ class MusicPlayer:
             return
 
         self.recently_played_history.append(song)
-        if context_playlist:
+
+        # --- BAGIAN PERBAIKAN BUG ---
+        # Kita cek apakah context_playlist ada DAN bukan string 'library'
+        if context_playlist and context_playlist != 'library':
             self.current_context = context_playlist
-            node = context_playlist.find_node_by_song(song)
-            if node:
-                context_playlist.current_song_node = node
+
+            # Pastikan objek memiliki method find_node_by_song sebelum dipanggil
+            if hasattr(context_playlist, 'find_node_by_song'):
+                node = context_playlist.find_node_by_song(song)
+                if node:
+                    context_playlist.current_song_node = node
         else:
             self.current_context = 'library'
 

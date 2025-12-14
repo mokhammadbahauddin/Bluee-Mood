@@ -1,171 +1,127 @@
 """
-Real-Time FFT Audio Visualizer Engine
-Provides smooth, threaded audio visualization with multiple render modes.
+Optimized Audio Visualizer Engine (Beat Detection Focus)
 """
 
 import numpy as np
 import threading
 import time
 import pygame
-from typing import Tuple
-
+import librosa
 
 class VisualizerEngine:
-    """
-    Threaded FFT engine that captures audio output and generates
-    frequency spectrum data for visualization.
-    """
-
-    def __init__(self, sample_rate: int = 44100, chunk_size: int = 2048):
+    def __init__(self, sample_rate: int = 22050, chunk_size: int = 1024): # Chunk size lebih kecil = lebih responsif
         self.sample_rate = sample_rate
         self.chunk_size = chunk_size
-        self.num_bars = 64  # Number of frequency bars
+        self.num_bars = 40  # Kurangi bar agar lebih tebal dan jelas
         self.running = False
         self.thread = None
 
-        # Spectrum data (shared between threads)
+        # Audio Data
+        self.audio_series = None
+        self.track_duration = 0
+
+        # Data Containers
         self.spectrum_data = np.zeros(self.num_bars)
         self.data_lock = threading.Lock()
 
-        # Smoothing buffer for animation
-        self.smoothing_factor = 0.7  # 0 = instant, 1 = never changes
+        # --- BEAT LOGIC SETTINGS ---
+        self.smoothing_factor = 0.4  # 0.0 = Instan, 1.0 = Beku. 0.4 pas untuk beat.
         self.previous_spectrum = np.zeros(self.num_bars)
 
-        # Peak hold effect
-        self.peak_values = np.zeros(self.num_bars)
-        self.peak_decay_rate = 0.95
+        # Kita fokuskan bin frekuensi ke area Bass dan Mid (0 - 4000Hz)
+        # karena disitulah "beat" berada. Treble tinggi seringkali cuma noise visual.
+        self.freq_max_limit = 4000
 
-        # Frequency bands (bass, mid, treble)
-        self.band_ranges = {
-            'bass': (0, 8),  # 0-250 Hz
-            'mid': (8, 32),  # 250-2000 Hz
-            'treble': (32, 64)  # 2000+ Hz
-        }
+    def load_track(self, file_path):
+        def _load():
+            try:
+                # Load audio (Mono)
+                y, sr = librosa.load(file_path, sr=self.sample_rate, mono=True)
+                self.audio_series = y
+                self.track_duration = librosa.get_duration(y=y, sr=sr)
+                print(f"🎵 Visualizer: Track Loaded for Beat Detection")
+            except Exception as e:
+                print(f"❌ Load Error: {e}")
+                self.audio_series = None
+
+        threading.Thread(target=_load, daemon=True).start()
 
     def start(self):
-        """Start the visualizer engine thread."""
-        if self.running:
-            return
-
+        if self.running: return
         self.running = True
         self.thread = threading.Thread(target=self._processing_loop, daemon=True)
         self.thread.start()
-        print("🎨 Visualizer Engine Started")
 
     def stop(self):
-        """Stop the visualizer engine thread."""
         self.running = False
         if self.thread:
             self.thread.join(timeout=1.0)
-        print("🎨 Visualizer Engine Stopped")
 
     def _processing_loop(self):
-        """
-        Main processing loop - runs in separate thread.
-        Captures audio and performs FFT analysis.
-        """
-
         while self.running:
             try:
-                # Generate spectrum data based on music playback
-                spectrum = self._simulate_audio_spectrum()
+                if self.audio_series is None or not pygame.mixer.music.get_busy():
+                    # Efek turun perlahan saat lagu mati
+                    with self.data_lock:
+                        self.spectrum_data *= 0.8
+                    time.sleep(0.03)
+                    continue
 
-                # Apply smoothing
-                smoothed = self._apply_smoothing(spectrum)
+                # 1. Ambil posisi waktu
+                current_ms = pygame.mixer.music.get_pos()
+                current_sec = current_ms / 1000.0
 
-                # Update shared data (thread-safe)
-                with self.data_lock:
-                    self.spectrum_data = smoothed
+                # 2. Ambil sampel audio
+                sample_idx = int(current_sec * self.sample_rate)
 
-                # Maintain target FPS (30 FPS = 33ms per frame)
-                time.sleep(1.0 / 30.0)
+                if sample_idx + self.chunk_size < len(self.audio_series):
+                    chunk = self.audio_series[sample_idx : sample_idx + self.chunk_size]
+
+                    # 3. FFT (Analisis Frekuensi)
+                    windowed_chunk = chunk * np.hanning(len(chunk))
+                    fft_result = np.abs(np.fft.rfft(windowed_chunk))
+
+                    # 4. Beat Processing (Kunci agar terasa "real")
+                    # Kita hanya ambil sebagian frekuensi (frekuensi rendah/bass)
+                    fft_len = len(fft_result)
+                    relevant_len = int(fft_len * (self.freq_max_limit / (self.sample_rate / 2)))
+                    fft_relevant = fft_result[:relevant_len]
+
+                    # Resize array agar sesuai jumlah bar (40 bars)
+                    # Kita pakai metode 'mean' untuk downsampling
+                    if len(fft_relevant) > self.num_bars:
+                        new_spectrum = np.array([np.mean(chunk) for chunk in np.array_split(fft_relevant, self.num_bars)])
+                    else:
+                        new_spectrum = np.zeros(self.num_bars)
+
+                    # 5. Logarithmic Scaling (Agar suara kecil tetap terlihat)
+                    new_spectrum = np.log10(new_spectrum + 1) * 0.8
+
+                    # 6. Bass Boost Logic
+                    # Bar awal (kiri) adalah bass. Kita cek energinya.
+                    bass_energy = np.mean(new_spectrum[:5])
+                    if bass_energy > 0.4:
+                        new_spectrum *= 1.2 # Boost visual saat ada kick drum!
+
+                    # Normalize (Max 1.0)
+                    new_spectrum = np.clip(new_spectrum, 0, 1.0)
+
+                    # 7. Smoothing (Exponential Moving Average)
+                    # Ini membuat bar turunnya pelan, tapi naiknya cepat
+                    smoothed = (self.previous_spectrum * self.smoothing_factor) + (new_spectrum * (1 - self.smoothing_factor))
+                    self.previous_spectrum = smoothed
+
+                    with self.data_lock:
+                        self.spectrum_data = smoothed
+
+                time.sleep(0.02) # ~50 FPS agar mulus
 
             except Exception as e:
-                print(f"Visualizer error: {e}")
                 time.sleep(0.1)
 
-    def _simulate_audio_spectrum(self) -> np.ndarray:
-        """
-        Simulate audio spectrum based on playback.
-        Creates realistic-looking frequency bars.
-        """
-
-        # Check if music is playing
-        try:
-            if not pygame.mixer.music.get_busy():
-                return np.zeros(self.num_bars)
-        except:
-            return np.zeros(self.num_bars)
-
-        # Get playback position (for animation sync)
-        try:
-            pos = pygame.mixer.music.get_pos() / 1000.0  # Convert to seconds
-        except:
-            pos = time.time()
-
-        # Generate realistic frequency spectrum
-        spectrum = np.zeros(self.num_bars)
-
-        # Bass frequencies (low index) - stronger, slower movement
-        bass_wave = np.sin(pos * 2.0 * np.pi * 0.5) * 0.8 + 0.2
-        spectrum[:8] = np.random.uniform(0.3, 1.0, 8) * bass_wave
-
-        # Mid frequencies - moderate movement
-        mid_wave = np.sin(pos * 2.0 * np.pi * 1.5) * 0.6 + 0.4
-        spectrum[8:32] = np.random.uniform(0.2, 0.8, 24) * mid_wave
-
-        # Treble frequencies - faster, more dynamic
-        treble_wave = np.sin(pos * 2.0 * np.pi * 3.0) * 0.5 + 0.3
-        spectrum[32:] = np.random.uniform(0.1, 0.6, 32) * treble_wave
-
-        # Add random peaks for realism
-        if np.random.random() > 0.9:
-            peak_idx = np.random.randint(0, self.num_bars)
-            spectrum[peak_idx] = min(spectrum[peak_idx] + 0.4, 1.0)
-
-        return spectrum
-
-    def _apply_smoothing(self, spectrum: np.ndarray) -> np.ndarray:
-        """
-        Apply exponential smoothing to prevent flickering.
-        Update peak hold values.
-        """
-
-        # Exponential moving average
-        smoothed = (self.smoothing_factor * self.previous_spectrum +
-                    (1 - self.smoothing_factor) * spectrum)
-
-        # Update peaks (with decay)
-        self.peak_values = np.maximum(smoothed, self.peak_values * self.peak_decay_rate)
-
-        self.previous_spectrum = smoothed
-        return smoothed
-
-    def get_spectrum(self) -> np.ndarray:
-        """Get current spectrum data (thread-safe)."""
+    def get_spectrum(self):
         with self.data_lock:
             return self.spectrum_data.copy()
 
-    def get_peaks(self) -> np.ndarray:
-        """Get current peak values."""
-        return self.peak_values.copy()
-
-    def get_band_energy(self, band: str) -> float:
-        """
-        Get energy level for a specific frequency band.
-        Useful for reactive UI elements.
-        """
-        start, end = self.band_ranges.get(band, (0, self.num_bars))
-        with self.data_lock:
-            return np.mean(self.spectrum_data[start:end])
-
-    def set_smoothing(self, factor: float):
-        """Adjust smoothing factor (0.0 - 1.0)."""
-        self.smoothing_factor = max(0.0, min(1.0, factor))
-
-    def set_num_bars(self, num_bars: int):
-        """Change number of frequency bars."""
-        self.num_bars = num_bars
-        self.spectrum_data = np.zeros(num_bars)
-        self.previous_spectrum = np.zeros(num_bars)
-        self.peak_values = np.zeros(num_bars)
+    def get_peaks(self):
+        return self.spectrum_data # Placeholder

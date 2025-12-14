@@ -655,7 +655,7 @@ class App(ctk.CTk):
                 self.slider.set(slider_pos)
                 self.np_slider.set(slider_pos)
             else:
-                if self.player.repeat_mode != "one":
+
                     self.on_next_click()
         self.after(100, self.update_progress)
 
@@ -1869,6 +1869,17 @@ class App(ctk.CTk):
             self.on_search()
         self.update_history_sidebar()
 
+    def _reset_lyrics_state(self):
+        """Membersihkan lirik lama dan memicu download untuk lagu baru."""
+        self.current_lyrics = None
+        self.current_lyric_times = []
+        self.current_lyric_text = "..."
+        self.np_lyrics_label.configure(text="Loading lyrics...")
+
+        # Picu download untuk lagu yang SEDANG aktif di player
+        if self.player.current_song:
+            self.player.download_lyrics_background(self.player.current_song)
+
     def on_shuffle_click(self):
         is_active = self.player.toggle_shuffle()
         active_color = self.COLOR_PALETTE["accent_pink"]
@@ -1929,12 +1940,19 @@ class App(ctk.CTk):
 
     def on_play_song(self, song_object, context_playlist=None):
         self.player.play_song(song_object, context_playlist=context_playlist)
+
+        # --- TAMBAHAN BARU UNTUK VISUALIZER ---
+        if VISUALIZER_AVAILABLE and self.visualizer_engine:
+            # Memuat data audio asli ke visualizer
+            self.visualizer_engine.load_track(song_object.file_path)
+
         self.current_lyrics = None
         self.current_lyric_times = []
         self.np_lyrics_label.configure(text="Searching lyrics...")  # Tanda loading
 
         # Panggil download di background
         self.player.download_lyrics_background(song_object)
+        self._reset_lyrics_state()
         self.slider.set(0)
         self.np_slider.set(0)
         self.update_player_ui()
@@ -1949,15 +1967,23 @@ class App(ctk.CTk):
 
     def on_next_click(self):
         self.player.play_next_song()
+        # --- TAMBAHAN ---
+        if VISUALIZER_AVAILABLE and self.visualizer_engine and self.player.current_song:
+            self.visualizer_engine.load_track(self.player.current_song.file_path)
         self.slider.set(0)
         self.np_slider.set(0)
+        self._reset_lyrics_state()  # <--- TAMBAHKAN INI
         self.update_player_ui()
         self.update_history_sidebar()
 
     def on_prev_click(self):
         self.player.play_prev_song()
+        # --- TAMBAHAN ---
+        if VISUALIZER_AVAILABLE and self.visualizer_engine and self.player.current_song:
+            self.visualizer_engine.load_track(self.player.current_song.file_path)
         self.slider.set(0)
         self.np_slider.set(0)
+        self._reset_lyrics_state()  # <--- TAMBAHKAN INI
         self.update_player_ui()
         self.update_history_sidebar()
 
