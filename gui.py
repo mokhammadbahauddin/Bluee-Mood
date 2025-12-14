@@ -66,6 +66,9 @@ class App(ctk.CTk):
     def __init__(self):
         super().__init__()
 
+        self.is_running = True  # Flag penanda aplikasi aktif
+        self.logout_callback = None
+
         # --- PALET WARNA TEMA BARU ---
         self.COLOR_PALETTE = {
             "window_bg": "#161616",
@@ -95,6 +98,8 @@ class App(ctk.CTk):
 
         self.title("Bluee Mood")
         self.geometry("1400x900")
+        self.after(200, lambda: self.state('zoomed'))
+
         try:
             self.iconbitmap(resource_path("logo.ico"))  # Ganti "logo.ico" dengan nama file Anda
         except Exception as e:
@@ -102,8 +107,9 @@ class App(ctk.CTk):
             pass  # Lanjutkan tanpa crash
 
         self.player = MusicPlayer()
-        self.add_to_playlist_window = None
         self.username_var = ctk.StringVar(value=self.player.username)
+
+        self.add_to_playlist_window = None
         self.last_seek_time = 0.0
         self.is_slider_seeking = False
         self.current_genre_filter = "All"
@@ -381,9 +387,11 @@ class App(ctk.CTk):
         self.volume_percent_label.grid(row=0, column=5, padx=(0, 10))
 
         self.create_now_playing_view()
+        self.protocol("WM_DELETE_WINDOW", self.on_closing)
         self.update_progress()
         self.show_dashboard()
         self.update_history_sidebar()
+
 
 
         # --- FUNGSI BARU: Untuk memuat gambar dengan aman ---
@@ -583,8 +591,7 @@ class App(ctk.CTk):
 
     def _animate_now_playing_dots(self):
         """Loop untuk menganimasikan titik-titik 'Now Playing'."""
-        if not self.np_animation_running:
-            return  # Hentikan loop jika view ditutup
+        if not self.np_animation_running or not self.is_running: return
 
         try:
             # Update jumlah titik (akan berputar 0, 1, 2, 3, 0, ...)
@@ -597,7 +604,8 @@ class App(ctk.CTk):
             self.np_now_playing_label.configure(text=f"{base_text}{dots:<3}")
 
             # Jadwalkan frame berikutnya (setiap 500ms atau 0.5 detik)
-            self.after(500, self._animate_now_playing_dots)
+            if self.is_running:
+                self.after(500, self._animate_now_playing_dots)
 
         except Exception as e:
             # Jika jendela ditutup saat animasi berjalan
@@ -618,6 +626,8 @@ class App(ctk.CTk):
         return f"{mins:02}:{secs:02}"
 
     def update_progress(self):
+        if not self.is_running: return
+
         if self.player.is_playing and self.player.current_song and not self.is_slider_seeking:
             total_duration = self.player.current_song.duration_seconds
             current_time = self.player.get_current_playback_time()
@@ -657,7 +667,8 @@ class App(ctk.CTk):
             else:
 
                     self.on_next_click()
-        self.after(100, self.update_progress)
+        if self.is_running:
+            self.after(100, self.update_progress)
 
     def on_slider_press(self, event):
         self.is_slider_seeking = True
@@ -1265,26 +1276,23 @@ class App(ctk.CTk):
 
     def show_settings(self):
         self._reset_sidebar_buttons()
-        self.setting_button.configure(fg_color=self.COLOR_PALETTE["accent_blue"], text_color="#FFFFFF")  # Atur ke Aktif
+        self.setting_button.configure(fg_color=self.COLOR_PALETTE["accent_blue"], text_color="#FFFFFF")
 
         self.clear_content_frame()
         self.main_title_label.configure(text="Profile Settings")
 
-        # --- PERUBAHAN: Ganti warna frame ---
         settings_frame = ctk.CTkFrame(self.content_frame, fg_color=self.COLOR_PALETTE["card_bg"])
         settings_frame.pack(fill="x", padx=10, pady=10)
 
         basic_info_frame = ctk.CTkFrame(settings_frame, fg_color="transparent")
         basic_info_frame.pack(fill="x", padx=20, pady=20)
 
-        # --- PERUBAHAN: Ganti warna label ---
         ctk.CTkLabel(basic_info_frame, text="Basic Information", font=ctk.CTkFont(size=16, weight="bold"),
                      text_color=self.COLOR_PALETTE["text_primary"]).pack(anchor="w")
 
         ctk.CTkLabel(basic_info_frame, text="Name", text_color=self.COLOR_PALETTE["text_secondary"]).pack(anchor="w",
                                                                                                           pady=(10, 0))
 
-        # --- PERUBAHAN: Ganti warna entry field ---
         self.settings_name_entry = ctk.CTkEntry(basic_info_frame,
                                                 fg_color=self.COLOR_PALETTE["card_hover"],
                                                 text_color=self.COLOR_PALETTE["text_primary"],
@@ -1304,7 +1312,6 @@ class App(ctk.CTk):
                                                  state="disabled", fg_color=self.COLOR_PALETTE["card_hover"])
         self.settings_email_entry.pack(fill="x", pady=(0, 10))
 
-        # --- PERUBAHAN: Ganti warna tombol save ---
         save_btn = ctk.CTkButton(basic_info_frame, text="Save Changes", command=self.on_save_settings,
                                  fg_color=self.COLOR_PALETTE["accent_pink"],
                                  hover_color=self.COLOR_PALETTE["card_hover"])
@@ -1312,6 +1319,92 @@ class App(ctk.CTk):
 
         self.settings_status_label = ctk.CTkLabel(basic_info_frame, text="")
         self.settings_status_label.pack(anchor="w", pady=5)
+
+        # ========== ADD THIS SECTION FOR LOGOUT ==========
+        # Separator
+        separator = ctk.CTkFrame(basic_info_frame, height=2, fg_color=self.COLOR_PALETTE["card_hover"])
+        separator.pack(fill="x", pady=20)
+
+        # Account section
+        ctk.CTkLabel(basic_info_frame, text="Account", font=ctk.CTkFont(size=16, weight="bold"),
+                     text_color=self.COLOR_PALETTE["text_primary"]).pack(anchor="w", pady=(10, 20))
+
+        # Logout button
+        logout_btn = ctk.CTkButton(
+            basic_info_frame,
+            text="🚪  Logout",
+            command=self.handle_logout,
+            fg_color=self.COLOR_PALETTE["accent_pink"],
+            hover_color=self.COLOR_PALETTE["card_hover"],
+            height=40,
+            font=ctk.CTkFont(size=14, weight="bold")
+        )
+        logout_btn.pack(anchor="w", pady=10)
+
+
+
+    # --- TAMBAHKAN/GANTI FUNGSI INI ---
+
+    def cleanup(self):
+        """Membersihkan resource dengan AGRESIF sebelum window hancur."""
+        print("Stopping GUI threads...")
+
+        # 1. Matikan Flag Utama
+        self.is_running = False
+
+        # 2. BATALKAN SEMUA JADWAL TERSISA (Ini obat error 'invalid command')
+        try:
+            # Ambil semua ID after yang masih pending
+            for after_id in self.tk.call('after', 'info'):
+                self.after_cancel(after_id)
+        except:
+            pass
+
+        # 3. Stop Audio
+        try:
+            pygame.mixer.music.stop()
+            pygame.mixer.music.unload()
+            pygame.mixer.quit()
+        except:
+            pass
+
+        # 4. Stop Visualizer
+        if self.visualizer_engine:
+            self.visualizer_engine.stop()
+
+        # 5. Hancurkan Window
+        # Kita gunakan .quit() dulu untuk keluar mainloop, baru destroy
+        try:
+            self.quit()
+            self.destroy()
+        except:
+            pass
+
+    def handle_logout(self):
+        """Called when Logout button is clicked"""
+        # 1. Stop internal processes (music, visualizer)
+        self.cleanup()
+
+        # 2. Trigger the callback in main.py to handle the restart
+        if self.logout_callback:
+            self.logout_callback()
+
+        # 3. Ensure this window is destroyed if it hasn't been already
+        # This is a fallback to ensure the main loop in main.py breaks
+        try:
+            if self.winfo_exists():
+                self.destroy()
+        except:
+            pass
+
+    def on_closing(self):
+        """Dipanggil saat user menekan tombol X (Close Window)."""
+        # 1. Matikan proses internal
+        self.cleanup()
+
+        # 2. Hancurkan window secara manual (karena ini bukan logout/restart)
+        self.destroy()
+        sys.exit(0)  # Pastikan script mati total
 
     def create_song_widget(self, parent_frame, song, context_playlist):
         # 1. Ganti warna frame

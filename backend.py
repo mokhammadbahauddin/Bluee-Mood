@@ -565,8 +565,8 @@ class MusicPlayer:
             if similar_song:
                 self.play_song(similar_song, context_playlist=None)
             else:
-                # Sesuai PDF[cite: 39], berhenti jika tidak ada yang mirip
-                self.is_playing = False
+                print("Tidak ada lagu lain yang mirip, mengulang lagu saat ini.")
+                self.play_song(self.current_song, context_playlist=None)
 
     def play_prev_song(self):
         if not self.current_song: return
@@ -603,8 +603,9 @@ class MusicPlayer:
                 self.play_song(similar_song, context_playlist=None)
                 print(f"Prev (Mirip): Memutar {similar_song.title}")
             else:
-                # Jika tidak ada lagu mirip, berhenti
-                self.is_playing = False
+                print("Tidak ada lagu lain yang mirip, mengulang lagu saat ini.")
+                self.play_song(self.current_song, context_playlist=None)
+
         # --- FITUR BARU: Auto Download Lirik ---
     def download_lyrics_background(self, song):
         """Mencari dan mendownload lirik di background thread."""
