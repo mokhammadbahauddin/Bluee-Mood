@@ -80,7 +80,7 @@ Pastikan Python sudah terinstal, lalu jalankan perintah ini di terminal:
 
 
 ```bash
-pip install customtkinter pygame mutagen Pillow syncedlyrics
+pip install customtkinter pygame mutagen Pillow syncedlyrics numpy librosa
 ```
 ### 3. Jalankan Aplikasi
 ```Bash
