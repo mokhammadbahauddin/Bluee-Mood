@@ -85,7 +85,7 @@ pip install customtkinter pygame mutagen Pillow syncedlyrics numpy librosa
 ### 3. Jalankan Aplikasi
 ```Bash
 
-python gui.py
+python main.py
 ```
 
 ## 📖 Panduan Penggunaan
