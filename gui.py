@@ -63,9 +63,9 @@ ctk.set_default_color_theme("blue")
 # JENDELA UTAMA (USER VIEW)
 # =============================================================================
 class App(ctk.CTk):
-    def __init__(self):
+    def __init__(self, user_role="user"):  # <--- Tambahkan parameter user_role
         super().__init__()
-
+        self.user_role = user_role  # Simpan role ke variabel class
         self.is_running = True  # Flag penanda aplikasi aktif
         self.logout_callback = None
 
@@ -101,10 +101,22 @@ class App(ctk.CTk):
         self.after(200, lambda: self.state('zoomed'))
 
         try:
-            self.iconbitmap(resource_path("logo.ico"))  # Ganti "logo.ico" dengan nama file Anda
+            # 1. Dapatkan lokasi folder dimana gui.py berada
+            script_dir = os.path.dirname(os.path.abspath(__file__))
+
+            # 2. Gabungkan dengan nama file icon
+            icon_path = os.path.join(script_dir, "logo.ico")
+
+            # 3. Cek apakah file benar-benar ada sebelum dimuat
+            if os.path.exists(icon_path):
+                self.iconbitmap(icon_path)
+                print(f"✅ Ikon berhasil dimuat dari: {icon_path}")
+            else:
+                print(f"⚠️ File ikon tidak ditemukan di: {icon_path}")
+
         except Exception as e:
-            print(f"Peringatan: File logo 'logo.ico' tidak ditemukan atau rusak. Menggunakan ikon default. Error: {e}")
-            pass  # Lanjutkan tanpa crash
+            print(f"⚠️ Gagal memuat ikon: {e}")
+            pass
 
         self.player = MusicPlayer()
         self.username_var = ctk.StringVar(value=self.player.username)
@@ -205,7 +217,12 @@ class App(ctk.CTk):
                                           font=ctk.CTkFont(size=20, weight="bold"), height=40, fg_color="transparent",
                                           hover_color=self.COLOR_PALETTE["card_hover"],
                                           command=self.show_admin_panel)
-        self.admin_button.grid(row=10, column=0, padx=20, pady=10, sticky="ew")
+
+        if self.user_role == "admin":
+            self.admin_button.grid(row=10, column=0, padx=20, pady=10, sticky="ew")
+        else:
+            # Jika user biasa, jangan tampilkan tombol ini
+            pass
 
         # 2. Header Frame (Kolom 1-2, Baris 0)
         self.header_frame = ctk.CTkFrame(self, fg_color="transparent")
@@ -1013,68 +1030,12 @@ class App(ctk.CTk):
         self.show_playlist_songs(self.player.favourite_playlist)
 
     def show_admin_panel(self):
-        # Cek apakah sudah login sebelumnya (opsional, agar tidak tanya password terus)
-        if getattr(self, "is_admin_authenticated", False):
-            self._load_admin_panel_content()
-            return
 
-        # 1. Tampilkan Peringatan Awal (Simulasi Pop-up Konfirmasi)
-        # Karena CTk tidak punya Yes/No dialog bawaan yang sederhana, kita pakai Toplevel window kecil
-        self.auth_dialog = ctk.CTkToplevel(self)
-        self.auth_dialog.title("Restricted Access")
-        self.auth_dialog.geometry("400x200")
-        self.auth_dialog.grab_set()  # Fokus ke window ini
+        self._load_admin_panel_content()
 
-        # Pusatkan window
-        self.auth_dialog.update_idletasks()
-        x = (self.winfo_screenwidth() - self.auth_dialog.winfo_width()) // 2
-        y = (self.winfo_screenheight() - self.auth_dialog.winfo_height()) // 2
-        self.auth_dialog.geometry(f"+{x}+{y}")
 
-        ctk.CTkLabel(self.auth_dialog,
-                     text="Hanya seorang Admin yang bisa menggunakan fitur ini.\nApakah kamu seorang Admin?",
-                     font=ctk.CTkFont(size=14),
-                     text_color=self.COLOR_PALETTE["text_primary"],
-                     wraplength=350).pack(pady=30)
 
-        btn_frame = ctk.CTkFrame(self.auth_dialog, fg_color="transparent")
-        btn_frame.pack(pady=10)
 
-        ctk.CTkButton(btn_frame, text="Yes", width=100,
-                      fg_color=self.COLOR_PALETTE["accent_pink"],
-                      command=self._prompt_password).pack(side="left", padx=10)
-
-        ctk.CTkButton(btn_frame, text="No", width=100,
-                      fg_color=self.COLOR_PALETTE["card_hover"],
-                      command=self.auth_dialog.destroy).pack(side="left", padx=10)
-
-    def _prompt_password(self):
-        """Fungsi internal untuk meminta password setelah klik Yes."""
-        self.auth_dialog.destroy()  # Tutup dialog Yes/No
-
-        # 2. Minta Password
-        # Kita gunakan CTkInputDialog bawaan untuk ini
-        dialog = ctk.CTkInputDialog(text="Masukkan Password Admin:", title="Verifikasi Admin")
-
-        # Trik agar dialog muncul di tengah (sedikit hacky karena CTkInputDialog tidak punya parameter parent)
-        # Tapi defaultnya sudah cukup oke.
-
-        password = dialog.get_input()
-
-        # 3. Validasi Password
-        if password == "admin":
-            self.is_admin_authenticated = True  # Simpan status login
-            self._load_admin_panel_content()  # Buka panel admin
-        else:
-            if password is not None:  # Jika user tidak klik cancel
-                # Tampilkan pesan error (bisa pakai print atau dialog error kecil)
-                print("Akses ditolak: Password salah.")
-                # Opsional: Tampilkan dialog error
-                error_pop = ctk.CTkToplevel(self)
-                error_pop.title("Error")
-                error_pop.geometry("300x150")
-                ctk.CTkLabel(error_pop, text="Password Salah!", text_color="red").pack(pady=40)
-                # ...
 
     def _load_admin_panel_content(self):
         """Fungsi internal untuk menampilkan isi Admin Panel (kode lama Anda)."""
@@ -1346,40 +1307,47 @@ class App(ctk.CTk):
     # --- TAMBAHKAN/GANTI FUNGSI INI ---
 
     def cleanup(self):
-        """Membersihkan resource dengan AGRESIF sebelum window hancur."""
+        """
+        Membersihkan resource dengan AGRESIF sebelum window hancur.
+        Fungsi ini dipanggil baik saat Logout maupun saat Close App.
+        """
         print("Stopping GUI threads...")
 
-        # 1. Matikan Flag Utama
+        # 1. Matikan Flag Utama (Hentikan loop update_progress)
         self.is_running = False
 
-        # 2. BATALKAN SEMUA JADWAL TERSISA (Ini obat error 'invalid command')
+        # 2. BATALKAN SEMUA JADWAL .after() YANG TERSISA
+        # Ini adalah obat manjur untuk error 'invalid command name'
         try:
-            # Ambil semua ID after yang masih pending
+            # Ambil semua ID 'after' yang masih pending di Tkinter
             for after_id in self.tk.call('after', 'info'):
                 self.after_cancel(after_id)
-        except:
-            pass
+        except Exception:
+            pass  # Abaikan jika gagal, yang penting sudah dicoba
 
-        # 3. Stop Audio
+        # 3. Stop Audio & Mixer
         try:
-            pygame.mixer.music.stop()
-            pygame.mixer.music.unload()
-            pygame.mixer.quit()
-        except:
+            if pygame.mixer.get_init():
+                pygame.mixer.music.stop()
+                pygame.mixer.music.unload()  # Lepas file agar tidak terkunci
+                pygame.mixer.quit()
+        except Exception:
             pass
 
-        # 4. Stop Visualizer
+        # 4. Stop Visualizer Thread
         if self.visualizer_engine:
-            self.visualizer_engine.stop()
+            try:
+                self.visualizer_engine.stop()
+            except Exception:
+                pass
 
-        # 5. Hancurkan Window
+        # 5. Hancurkan Window (Opsional di sini, tapi bagus untuk memastikan)
         # Kita gunakan .quit() dulu untuk keluar mainloop, baru destroy
         try:
-            self.quit()
-            self.destroy()
-        except:
-            pass
-
+            self.quit()  # Keluar dari mainloop
+            self.destroy()  # Hancurkan widget
+        except Exception:
+            pass  # Abaikan jika window sudah hancur duluan
     def handle_logout(self):
         """Called when Logout button is clicked"""
         # 1. Stop internal processes (music, visualizer)
@@ -1399,12 +1367,19 @@ class App(ctk.CTk):
 
     def on_closing(self):
         """Dipanggil saat user menekan tombol X (Close Window)."""
-        # 1. Matikan proses internal
+        # 1. Matikan proses internal (musik, thread)
         self.cleanup()
 
-        # 2. Hancurkan window secara manual (karena ini bukan logout/restart)
-        self.destroy()
-        sys.exit(0)  # Pastikan script mati total
+        # 2. Hancurkan window dengan aman
+        # Kita gunakan try-except untuk mencegah error "can't delete Tcl command"
+        # jika window sudah hancur duluan oleh proses lain.
+        try:
+            self.destroy()
+        except Exception:
+            pass  # Abaikan error, karena aplikasi toh mau ditutup
+
+        # 3. Matikan proses Python sepenuhnya
+        sys.exit(0)
 
     def create_song_widget(self, parent_frame, song, context_playlist):
         # 1. Ganti warna frame

@@ -16,31 +16,36 @@ SESSION_FILE = "session.json"
 class BlueMoodApp:
     def __init__(self):
         self.current_user = None
+        self.current_role = "user"  # <--- Tambahkan variabel default role
         self.music_app = None
         self.login_window = None
 
         # 1. Cek Sesi
-        saved_user = self.get_saved_session()
+        # 1. Cek Sesi (Update logika get_saved_session)
+        saved_data = self.get_saved_session()
 
-        if saved_user:
-            print(f"✓ Auto-login: {saved_user}")
-            self.current_user = saved_user
+        if saved_data:
+            self.current_user = saved_data.get("username")
+            self.current_role = saved_data.get("role", "user")  # Ambil role
+            print(f"✓ Auto-login: {self.current_user} ({self.current_role})")
             self.launch_music_player()
         else:
-            # 2. Tampilkan Login
             self.show_login()
 
     def get_saved_session(self):
+        """Mengembalikan dictionary data sesi, bukan cuma username"""
         if os.path.exists(SESSION_FILE):
             try:
                 with open(SESSION_FILE, 'r') as f:
-                    return json.load(f).get("username")
-            except: pass
+                    return json.load(f)  # Return full dict
+            except:
+                pass
         return None
 
-    def save_session(self, username):
+    def save_session(self, username, role):
+        """Simpan username DAN role ke file sesi"""
         with open(SESSION_FILE, 'w') as f:
-            json.dump({"username": username}, f)
+            json.dump({"username": username, "role": role}, f)
 
     def clear_session(self):
         if os.path.exists(SESSION_FILE):
@@ -60,11 +65,12 @@ class BlueMoodApp:
             print("Aplikasi ditutup tanpa login.")
             sys.exit()
 
-    def handle_login_success(self, username):
-        """Callback saat login berhasil."""
-        print(f"✓ Credentials verified for: {username}")
+    def handle_login_success(self, username, role):
+        """Callback saat login berhasil (Terima role dari login.py)"""
+        print(f"✓ Credentials verified for: {username} as {role}")
         self.current_user = username
-        self.save_session(username)
+        self.current_role = role
+        self.save_session(username, role)  # Simpan sesi lengkap
 
         if self.login_window:
             self.login_window.destroy()
@@ -111,12 +117,12 @@ class BlueMoodApp:
         sys.exit(0)
 
     def launch_music_player(self):
-        """Membuka GUI Utama"""
         try:
             print("🚀 Loading gui.py...")
             from gui import App as MusicPlayerApp
 
-            self.music_app = MusicPlayerApp()
+            # MASUKKAN ROLE KE DALAM GUI
+            self.music_app = MusicPlayerApp(user_role=self.current_role)
 
             if hasattr(self.music_app, 'username_var'):
                 self.music_app.username_var.set(self.current_user)
@@ -126,7 +132,6 @@ class BlueMoodApp:
 
             print("✅ GUI Started.")
             self.music_app.mainloop()
-
         except Exception as e:
             print(f"❌ CRASH ERROR in gui.py: {e}")
             import traceback

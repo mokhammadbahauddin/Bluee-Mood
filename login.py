@@ -295,25 +295,45 @@ class LoginWindow(ctk.CTk):
                 # Auto-login after delay
                 self.after(1500, lambda: self.finish_login(username))
 
+
         else:
+
             # --- LOGIN LOGIC ---
+
             if username not in users:
+
                 self.show_status("User not found.", True)
+
                 self._shake_animation()
+
             else:
+
                 stored_password = users[username].get("password")
+
                 if stored_password == hashed_password:
+
                     self.show_status("Login Successful!", False)
-                    self.finish_login(username)
+
+                    # AMBIL ROLE DARI DATA USER
+
+                    user_role = users[username].get("role", "user")
+
+                    # KIRIM ROLE KE FUNGSI FINISH
+
+                    self.finish_login(username, user_role)
+
                 else:
+
                     self.show_status("Incorrect password.", True)
+
                     self._shake_animation()
+
                     self.password_entry.delete(0, 'end')
 
-    def finish_login(self, username):
+    def finish_login(self, username, role):
         """Triggers the success callback to launch the main app."""
         if self.on_login_success:
-            self.on_login_success(username)
+            self.on_login_success(username, role)  # <--- Kirim role ke main.py
 
     def show_status(self, message, is_error):
         """Displays a status message with auto-hide."""
