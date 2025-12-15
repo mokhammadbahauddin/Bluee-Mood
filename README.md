@@ -91,23 +91,17 @@ python main.py
 ## 📖 Panduan Penggunaan
 
 ```bash
-Masuk sebagai Admin
-Klik tombol 🛡️ Admin Panel di sidebar kiri bawah.
+cara menjadi admin :
+1. sign up sebagai 
+username: admin (contoh)
+password: admin (contoh)
+2. secara default anda akan menjadi user, tapi untuk mengubahnya cari file user_data.json
+3. cari data yang baru anda buat (biasanya berada di paling bawah)
+4. ubah role : 'user' menjadi 'admin'
+5. tutup aplikasi
+6. login lagi dengan username dan password yang sama
+7. selamat anda sekarang menjadi admin dan bisa mengakses admin panel untuk menambahkan lagu, mengedit lagu, dan menghapus lagu
 
-Akan muncul pop-up konfirmasi. Klik Yes.
-
-Masukkan password: admin
-
-Anda sekarang dapat Menambah, Mengedit, atau Menghapus lagu dari database.
-
-Manajemen Playlist
-Masuk ke menu 🎵 My Playlists.
-
-Ketik nama playlist baru di kolom input, lalu klik Create.
-
-Klik tombol View Songs pada playlist yang dibuat.
-
-Klik + Tambah Lagu dari Library untuk memasukkan lagu.
 ```
 
 Copyright © 2025 Kelompok 8. All Rights Reserved.
