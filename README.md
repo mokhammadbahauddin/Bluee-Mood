@@ -25,7 +25,7 @@
 | :--- | :--- | :--- |
 | **103102400080** | **Mokhammad Bahauddin** | Lead Developer (Backend & Data Structures) |
 | **103102400050** | **Novena Aurelia Luisma** | UI/UX Designer & Frontend (CustomTkinter) |
-| **103102400011** | **Gracella Mangalik** | Quality Assurance & Documentation |
+| **103102400011** | **Gracella Mangali** | Quality Assurance & Documentation |
 
 ---
 
